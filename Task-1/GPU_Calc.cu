@@ -37,7 +37,7 @@ int main(void){
     }
     cout << "max_error of CPU is " << max_error << endl;
     int timeuseCPU = 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec;
-    cout << "total time for cpu is " << timeuseCPU/1000 << "ms" <<endl;
+    cout << "total time for cpu is " << timeuseCPU << "us" <<endl;
     //delete results
     for(int i=0;i<n;i++){
         C[i]=0;
@@ -77,9 +77,9 @@ int main(void){
     cudaFree(Bd);
     cudaFree(Cd);
     int timeuseGPU = 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec;
-    cout << "total time use in GPU is " << timeuseGPU/1000 << "ms" <<endl;
+    cout << "total time use in GPU is " << timeuseGPU<< "us" <<endl;
     if(timeuseGPU<timeuseCPU){
-        cout<<"GPU is faster than CPU for "<<timeuseCPU-timeuseGPU<<" ms"<<endl;
+        cout<<"GPU is faster than CPU for "<<timeuseCPU-timeuseGPU<<" us"<<endl;
     }
     return 0;
 }
