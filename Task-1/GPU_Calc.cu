@@ -11,10 +11,19 @@ __global__ void Plus(float A[], float B[], float C[], int n){
 }
 
 int main(void){
+    int n = 1024 * 1024;//default
+    cout<<"Set size vector(use default enter -1 default is 1024*1024):";
+    int sizeV;
+    cin>>sizeV;
+    if(sizeV>0){
+        n=sizeV;
+        cout<<"Using size "<<n<<" to calculate"<<endl;
+    }else{
+        cout<<"Now Using Default size 1024*1024 long..."<<endl;
+    }
     struct timeval start, end;
     gettimeofday( &start, NULL );
     float*A, *Ad, *B, *Bd, *C, *Cd;
-    int n = 1024 * 1024;
     int size = n * sizeof(float);
 
     A = (float*)malloc(size);
@@ -37,7 +46,7 @@ int main(void){
     }
     cout << "max_error of CPU is " << max_error << endl;
     int timeuseCPU = 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec;
-    cout << "total time for cpu is " << timeuseCPU << "us" <<endl;
+    cout << "total time for cpu is " << timeuseCPU<< "us" <<endl;
     //delete results
     for(int i=0;i<n;i++){
         C[i]=0;
