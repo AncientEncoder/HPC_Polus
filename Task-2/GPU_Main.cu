@@ -67,6 +67,11 @@ int main(void) {
         }
       }
     std::cout << "No error generated!\n";
+    if(timeuseGPU<timeuseCPU){
+        cout<<"GPU is faster than CPU for "<<timeuseCPU-timeuseGPU<<" us"<<endl;
+    }else{
+        cout<<"CPU is faster than GPU for "<<timeuseGPU-timeuseCPU<<" us"<<endl;
+    }
     free(h_A);
     free(h_AT);
     cudaFree(d_A);
