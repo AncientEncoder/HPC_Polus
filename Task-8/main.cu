@@ -12,11 +12,10 @@
 #include <chrono>
 
 // define vector length, stencil radius,
-#define INPUTSIZE 64l
-#define N (1024*1024*INPUTSIZE)
+#define N (1024*1024*512l)
 #define RADIUS 3
-#define GRIDSIZE 512
-#define BLOCKSIZE 1024
+#define GRIDSIZE 128
+#define BLOCKSIZE 256
 
 int gridSize  = GRIDSIZE;
 int blockSize = BLOCKSIZE;
