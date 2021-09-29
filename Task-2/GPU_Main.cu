@@ -7,19 +7,15 @@ using namespace std;
 __global__ void transposeKernel(const double* A, double* AT, int N) {
   int xIndex = blockDim.x * blockIdx.x + threadIdx.x;
   int yIndex = blockDim.y * blockIdx.y + threadIdx.y;
-  int index = xIndex + N * yIndex;
-  int T_index = yIndex + N * xIndex;
-
-  AT[T_index] = A[index];
+    AT[yIndex+xIndex*N]=A[xIndex+yIndex*N];
 }
 int main(void) {
-    int rank=50;//for 50*50 mart
+    int rank=100;//for 50*50 mart
     struct timeval start, end;
     int N =rank;
 
-    const int BLOCK_SIZE = 1;
-    dim3 Grids(N, N);
-    dim3 Blocks(BLOCK_SIZE, BLOCK_SIZE);
+    dim3 threadPerBlock(N, N);
+    dim3 blockNumber((N+threadPerBlock.x-1)/ threadPerBlock.x, (N+threadPerBlock.y-1)/ threadPerBlock.y );
 
     size_t size = N * N * sizeof(double);
 
@@ -28,7 +24,7 @@ int main(void) {
     double* h_AT = (double*)malloc(size);
 
     for (int i = 0; i < N * N; i++) {
-      h_A[i] = i + 1;
+      h_A[i] = i +1;
     }
 
     int i = 0, k = 0;
@@ -53,20 +49,12 @@ int main(void) {
 
     cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
     gettimeofday(&start,NULL);
-    transposeKernel<<<Grids, Blocks>>>(d_A, d_AT, N);
+    transposeKernel<<<blockNumber, threadPerBlock>>>(d_A, d_AT, N);
     cudaDeviceSynchronize();
     gettimeofday(&end,NULL);
     int timeuseGPU = 1000000 * ( end.tv_sec - start.tv_sec ) + end.tv_usec - start.tv_usec;
     cout << "total time use in GPU is " << timeuseGPU<< "us" <<endl;
     cudaMemcpy(h_AT, d_AT, size, cudaMemcpyDeviceToHost);
-    for (int i = 0; i < N; i++)
-      for (int j = 0; j < N; j++) {
-        if (h_A[i * N + j] != h_AT[j * N + i]) {
-          std::cout << "Error generated\n";
-          return 3;
-        }
-      }
-    std::cout << "No error generated!\n";
     if(timeuseGPU<timeuseCPU){
         cout<<"GPU is faster than CPU for "<<timeuseCPU-timeuseGPU<<" us"<<endl;
     }else{
