@@ -2,7 +2,7 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 #include <device_launch_parameters.h>
-#include <stdio.h>
+#include <iostream>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
@@ -20,9 +20,6 @@ void twoGPU(int size) {
   int work_per_gpu = (n - 1) / 2 + 1;
   int nBytes = n * sizeof(float);
   int nBytes_per_gpu = work_per_gpu * sizeof(float);
-
-  int devices_count = 2;
-
   float *h_a, *h_b, *h_c;
   h_a = (float*)malloc(nBytes);
   h_b = (float*)malloc(nBytes);
@@ -82,9 +79,9 @@ void twoGPU(int size) {
 
   cudaEventRecord(stop);
   cudaEventSynchronize(stop);
-  float msecs = 0;
-  cudaEventElapsedTime(&msecs, start, stop);
-  printf("%d Two GPUs used Time: %f ms\n", devices_count, msecs);
+  float twoGPU = 0;
+  cudaEventElapsedTime(&twoGPU, start, stop);
+  std::cout<<"Two GPUs run for :"<<twoGPU<<" ms "<<std::endl;
 
   cudaFree(d_a0);
   cudaFree(d_b0);
@@ -137,9 +134,9 @@ void oneGPU(int size) {
 
   cudaEventRecord(stop);
   cudaEventSynchronize(stop);
-  float msecs = 0;
-  cudaEventElapsedTime(&msecs, start, stop);
-  printf("One GPU Elapsed time: %f ms.\n", msecs);
+  float sigTime = 0;
+  cudaEventElapsedTime(&sigTime, start, stop);
+  std::cout<<"One GPU runs for :"<<sigTime<<" ms "<<std::endl;
 
   cudaFree(d_a);
   cudaFree(d_b);
