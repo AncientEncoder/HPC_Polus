@@ -7,7 +7,7 @@
 #include <cstdlib>
 #include <iostream>
 
-__global__ void vectorAddGPU(float* a, float* b, float* c, int N) {
+__global__ void Plus(float* a, float* b, float* c, int N) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
 
   if (idx < N) {
@@ -15,7 +15,7 @@ __global__ void vectorAddGPU(float* a, float* b, float* c, int N) {
   }
 }
 
-void multiGPU(int size = 1000000) {
+void twoGPU(int size) {
   int n = size;
   int work_per_gpu = (n - 1) / 2 + 1;
   int nBytes = n * sizeof(float);
@@ -36,19 +36,17 @@ void multiGPU(int size = 1000000) {
     h_b[i] = i + 1;
   }
 
+  float *d_a0, *d_b0, *d_c0;
   float *d_a1, *d_b1, *d_c1;
-  float *d_a2, *d_b2, *d_c2;
 
   cudaSetDevice(0);
-  printf("Allocating memory at GPU0\n");
+  cudaMalloc(&d_a0, nBytes_per_gpu);
+  cudaMalloc(&d_b0, nBytes_per_gpu);
+  cudaMalloc(&d_c0, nBytes_per_gpu);
+  cudaSetDevice(1);
   cudaMalloc(&d_a1, nBytes_per_gpu);
   cudaMalloc(&d_b1, nBytes_per_gpu);
   cudaMalloc(&d_c1, nBytes_per_gpu);
-  cudaSetDevice(1);
-  printf("Allocating memory at GPU1\n");
-  cudaMalloc(&d_a2, nBytes_per_gpu);
-  cudaMalloc(&d_b2, nBytes_per_gpu);
-  cudaMalloc(&d_c2, nBytes_per_gpu);
   cudaSetDevice(0);
 
   cudaEvent_t start, stop;
@@ -60,27 +58,22 @@ void multiGPU(int size = 1000000) {
 
   cudaEventRecord(start);
 
-  printf("Copying memory to GPU0\n");
   cudaSetDevice(0);
-  cudaMemcpyAsync(d_a1, &h_a[0], nBytes_per_gpu, cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_b1, &h_b[0], nBytes_per_gpu, cudaMemcpyHostToDevice);
+  cudaMemcpyAsync(d_a0, &h_a[0], nBytes_per_gpu, cudaMemcpyHostToDevice);
+  cudaMemcpyAsync(d_b0, &h_b[0], nBytes_per_gpu, cudaMemcpyHostToDevice);
 
-  printf("Doing GPU0 Vector add\n");
-  vectorAddGPU<<<GRID_SIZE, BLOCK_SIZE>>>(d_a1, d_b1, d_c1, n);
+  Plus<<<GRID_SIZE, BLOCK_SIZE>>>(d_a0, d_b0, d_c0, n);
 
-  cudaMemcpyAsync(&h_c[0], d_c1, nBytes_per_gpu, cudaMemcpyDeviceToHost);
+  cudaMemcpyAsync(&h_c[0], d_c0, nBytes_per_gpu, cudaMemcpyDeviceToHost);
 
   cudaSetDevice(1);
-  printf("Copying memory to GPU1\n");
-  cudaMemcpyAsync(d_a2, &h_a[work_per_gpu], nBytes_per_gpu,
+  cudaMemcpyAsync(d_a1, &h_a[work_per_gpu], nBytes_per_gpu,
                   cudaMemcpyHostToDevice);
-  cudaMemcpyAsync(d_b2, &h_b[work_per_gpu], nBytes_per_gpu,
+  cudaMemcpyAsync(d_b1, &h_b[work_per_gpu], nBytes_per_gpu,
                   cudaMemcpyHostToDevice);
+  Plus<<<GRID_SIZE, BLOCK_SIZE>>>(d_a1, d_b1, d_c1, n);
 
-  printf("Doing GPU1 Vector add\n");
-  vectorAddGPU<<<GRID_SIZE, BLOCK_SIZE>>>(d_a2, d_b2, d_c2, n);
-
-  cudaMemcpyAsync(&h_c[work_per_gpu], d_c2, nBytes_per_gpu,
+  cudaMemcpyAsync(&h_c[work_per_gpu], d_c1, nBytes_per_gpu,
                   cudaMemcpyDeviceToHost);
 
   cudaDeviceSynchronize();
@@ -91,15 +84,15 @@ void multiGPU(int size = 1000000) {
   cudaEventSynchronize(stop);
   float msecs = 0;
   cudaEventElapsedTime(&msecs, start, stop);
-  printf("%d GPU(s) Elapsed Time: %f ms\n", devices_count, msecs);
+  printf("%d Two GPUs used Time: %f ms\n", devices_count, msecs);
 
+  cudaFree(d_a0);
+  cudaFree(d_b0);
+  cudaFree(d_c0);
+  cudaSetDevice(1);
   cudaFree(d_a1);
   cudaFree(d_b1);
   cudaFree(d_c1);
-  cudaSetDevice(1);
-  cudaFree(d_a2);
-  cudaFree(d_b2);
-  cudaFree(d_c2);
   cudaSetDevice(0);
   cudaHostUnregister(h_a);
   cudaHostUnregister(h_b);
@@ -109,7 +102,7 @@ void multiGPU(int size = 1000000) {
   free(h_c);
 }
 
-void singleGPU(int size = 1000000) {
+void oneGPU(int size) {
   int n = size;
   int nBytes = n * sizeof(float);
 
@@ -125,19 +118,13 @@ void singleGPU(int size = 1000000) {
   dim3 grid((unsigned int)ceil(n / (float)block.x));
 
   for (int i = 0; i < n; i++) {
-    h_a[i] = rand() / (float)RAND_MAX;
-    h_b[i] = rand() / (float)RAND_MAX;
-    h_c[i] = 0;
+    h_a[i] =20.0;
+    h_b[i] = 10.0;
   }
-
-  printf("Allocating device memory on host..\n");
 
   cudaMalloc((void**)&d_a, n * sizeof(float));
   cudaMalloc((void**)&d_b, n * sizeof(float));
   cudaMalloc((void**)&d_c, n * sizeof(float));
-
-  printf("Copying to device..\n");
-
   cudaEvent_t start, stop;
   cudaEventCreate(&start);
   cudaEventCreate(&stop);
@@ -146,16 +133,13 @@ void singleGPU(int size = 1000000) {
 
   cudaMemcpy(d_a, h_a, n * sizeof(float), cudaMemcpyHostToDevice);
   cudaMemcpy(d_b, h_b, n * sizeof(float), cudaMemcpyHostToDevice);
-
-  printf("Doing GPU Vector add\n");
-
-  vectorAddGPU<<<grid, block>>>(d_a, d_b, d_c, n);
+  Plus<<<grid, block>>>(d_a, d_b, d_c, n);
 
   cudaEventRecord(stop);
   cudaEventSynchronize(stop);
   float msecs = 0;
   cudaEventElapsedTime(&msecs, start, stop);
-  printf("1 GPU Elapsed time: %f ms.\n", msecs);
+  printf("One GPU Elapsed time: %f ms.\n", msecs);
 
   cudaFree(d_a);
   cudaFree(d_b);
@@ -165,9 +149,9 @@ void singleGPU(int size = 1000000) {
   free(h_c);
 }
 
-int main(int argc, char** argv) {
-  singleGPU(atoi(argv[1]));
-  std::cout << "---------------------------\n---------------------------\n";
-  multiGPU(atoi(argv[1]));
+int main(int argc, char* argv[]) {
+  assert(argc==2);
+  oneGPU(atoi(argv[1]));
+  twoGPU(atoi(argv[1]));
   return 0;
 }
