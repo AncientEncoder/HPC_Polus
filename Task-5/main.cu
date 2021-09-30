@@ -89,10 +89,10 @@ int main(void) {
     cudaDeviceSynchronize();
     cudaMemcpy(V_t, v_D, size, cudaMemcpyDeviceToHost);
     cudaEventSynchronize(stop);
-
     float dTrans=0.0;
     cudaEventElapsedTime(&dTrans, start, stop);
     std::cout << "Dynamic trans used: " << dTrans << std::endl;
+    //summaty
     if(dTrans<=sTrans&&dTrans<=nTrans){
             std::cout<<"Dymic trans is btetter than Static trans "<<sTrans-dTrans<<" ms "<<"and btetter than normal trans"<<nTrans-dTrans<<" ms "<<std::endl;
         }else if(sTrans<=dTrans&&sTrans<=nTrans){
