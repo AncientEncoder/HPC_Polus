@@ -124,7 +124,7 @@ int main() {
     SAFE_CALL( cudaMemcpy(dev_outgoing_ids, outgoing_ids, edges_count * sizeof(int), cudaMemcpyHostToDevice) );
 
     dim3 compute_threads(1024);
-    dim3 compute_blocks( (vertices_count - 1) / compute_threads.x + 1);
+    dim3 compute_blocks( 32*(vertices_count - 1) / compute_threads.x + 1);
 
     for (int i = 0; i < 5; i++) {
         auto start = std::chrono::steady_clock::now();
